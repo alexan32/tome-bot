@@ -17,3 +17,6 @@ def getContextInfo(bot, ctx):
         "roles": roles,
         "authorIsOwner": isOwner
     }
+
+def getRoleStrings(member: discord.member):
+    return list(map(lambda x : x.name, member.roles))
