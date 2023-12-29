@@ -66,7 +66,6 @@ class RoleCog(commands.Cog):
             return
         
         # CHECK THAT AUTHOR HAS PERMISSION TO SET ROLE
-
         if roleName == "player" and not (authorIsOwner or "gm" in authorRoles or "admin" in authorRoles):
             ctx.send("Only server owners, admins, or gms can assign the 'player' role")
             return
