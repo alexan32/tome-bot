@@ -9,6 +9,9 @@ ENVIRONMENT = None      # dictionary loaded from json file in config folder
 HANDLER = None          # logger handler
 LOGGER = None           # logger obj
 ROLES = ['gm', 'player', 'admin']
+DICE_OPERATORS = r"(k|p|rr|ro|ra|e|mi|ma)(l|h)?"
+VARIABLE = r"([a-ce-z][a-z_]*|d[a-z_]+)"
+MAX_DEPTH = 10
 
 def init(stage):
     global STAGE

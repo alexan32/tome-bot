@@ -28,8 +28,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logger.info("loading bot extensions.")
-    await bot.load_extension("extensions.register")
-    await bot.load_extension("extensions.role")
+    await bot.load_extension("bot_extensions.register")
+    await bot.load_extension("bot_extensions.role")
     logger.info("======= BOT IS READY! =======")
 
 # LAUNCH BOT

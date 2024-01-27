@@ -1,114 +1,55 @@
 from d20 import roll
 import re
+from objects.character import Character
+from config.config import DICE_OPERATORS, VARIABLE, MAX_DEPTH, LOGGER
 
-# converts a dictionary that represents a roll into a roll string
-def processCompositeRollDict(rollDict: dict) -> str:
-    keys = rollDict.keys()
-    values = map(lambda key : rollDict[key], keys)
-    values = [x for x in values if x not in ["", "0", 0, None]]
-    return " + ".join(values).lower()
+logger = LOGGER
 
 
-# processes a dice string and performs variable replacement
-# much easier to process dice roll before performing roll instead of modifying d20 module. I tried :')
-def replaceVariables(rollString: str, variables:dict = {}) -> str:
-    regex = r"([a-ce-z][a-z]*|d[a-z]+)"
-    matches = re.findall(regex, rollString)
-    depth = 0
+# returns a set containing the following:
+# key - either string or None. returns the string if the input matches a saved value in the character data, otherwise None
+# total - string representing the total of the dice roll
+# roll - the string representing the final dice expression including the total
+def evaluate(rollString:str, character:Character, depth:int=0, logging=False) -> set:
+    rollString = rollString.strip()
+    key = None
+    _print = lambda content : logger.debug("".ljust(depth, "\t") + content) if logging else None
 
-    while len(matches) > 0:
-        print(f"matches in this pass: {matches}")
-        for match in matches:
-            if match in variables:
+    # if rollstring is a variable, we want to set it to its saved value for display purposes.
+    if depth == 0 and re.fullmatch(r"\b" + VARIABLE + r"\b", rollString):
+        _print(f"depth level 0 '{rollString}' is a variable!")
+        key = rollString
+        rollString = character.findRoll(rollString)
+        _print(f"found match for {rollString}: '{rollString}'")
+        if not rollString:
+            raise Exception(f'No data found for "{rollString}"')
 
-                replaceValue = variables[match]
-                if type(replaceValue) == "dict":
-                    replaceValue = processCompositeRollDict(replaceValue)
+    # find all variables, and make sure to ignore operations like "kh1", "kl2", etc
+    matches = re.findall(VARIABLE, rollString)
+    matches = [x for x in matches if not re.fullmatch(DICE_OPERATORS, x)]
+    _print(f"rollString: '{rollString}'. matches: {matches}")
 
-                exact = r"\b(" + match + r")\b" # make sure you are not matching on a portion of another var. ie 'dex' in 'dexterity'
-                print(f"performing replacement on {exact}")
-                rollString = re.sub(exact, replaceValue, rollString)
-            else:
-                print(f"no variable for {match}")
-
-        print(f"updated rollstring: {rollString}")
-
-        matches = re.findall(regex, rollString)
-        depth += 1
-        if len(matches) > 0 and depth == 10:
-            print("maximum depth hit!")
-            raise Exception(f"Hit maximum depth limit while attempting variable replacement. variables: {matches}")
-
-    return rollString.lower()
-
-
-# creates/updates variables using the values in the formulas dict
-def runFormulas(variables:dict, formulas:dict) -> dict:
-    keys = formulas.keys()
-    for key in keys:
-        try:
-            rollString = replaceVariables(formulas[key], variables)
-            result = str(roll(rollString).total)
-            variables[key] = result
-        except Exception as e:
-            print(f"failed to run formuala '{key}'. Error: {e}")
-            variables[key] = f"ERROR! {e}"
-    return variables
-
-
-# creates/updates variables using the values in the composite rolls dict
-def runCompositeRolls(variables:dict, compositeRolls:dict) -> dict:
-    keys = compositeRolls.keys()
-    for key in keys:
-        try:
-            rollString = processCompositeRollDict(compositeRolls[key])
-            variables[key] = rollString
-        except Exception as e:
-            print(f"failed to build from composite roll '{key}'. Error: {e}")
-            variables[key] = f"ERROR! {e}"
-    return variables
-
-
-variables = {
-    "level": "4",
-    "strength": "8",
-    "dexterity": "14",
-    "constitution": "12",
-    "wisdom": "12",
-    "charisma": "17",
-    "intelligence": "10",
-}
-
-formulas = {
-    "str": "(strength - 10) / 2",
-    "dex": "(dexterity - 10) / 2",
-    "con": "(constitution - 10) / 2",
-    "wis": "(wisdom - 10) / 2",
-    "int": "(intelligence - 10) / 2",
-    "cha": "(charisma - 10) / 2",
-    "prof": "proficiencybonus",
-    "proficiencybonus": "((level - 1) / 4) + 2",
-    "proficient": "proficiencybonus",
-    "expert": "proficiencybonus * 2",
-}
-
-compositeRolls = {
-    "dexteritysave": {
-        "base": "1d20",
-        "modifier": "dex",
-        "proficiency": "proficient",
-        "bonus": "2"
-    },
-    "dexteritycheck": {
-        "base": "1d20",
-        "modifier": "dex",
-        "proficiency": "",
-        "bonus": ""
-    }
-}
-
-if __name__ == "__main__":
-    import json
-    runFormulas(variables, formulas)
-    runCompositeRolls(variables, compositeRolls)
-    print(json.dumps(variables, indent=4))
+    # perform string replacements
+    misses = []
+    for match in matches:
+        replaceValue = character.findRoll(match)
+        if replaceValue:
+            if not replaceValue.isdigit():
+                if depth == MAX_DEPTH:
+                    raise Exception(f"'evaluate' function maximum depth ({MAX_DEPTH}) reached! Failed to replace '{replaceValue}'.")
+                _print(f"RECURSIVE CALL! '{match}' ==> '{replaceValue}'?")
+                _, replaceValue, _ = evaluate(replaceValue, character, depth=depth+1, logging=logging)
+                _print(f"DONE! '{match}' ==> '{replaceValue}'")
+            exact = r"\b(" + match + r")\b" # make sure you are not matching on a portion of another var. ie 'dex' in 'dexterity'
+            _print(f"performing replacement on {exact}")
+            rollString = re.sub(exact, replaceValue, rollString)
+        else:
+            _print(f"no variable for {match}")
+            misses.append(match)
+    
+    if len(misses) > 0:
+        raise Exception(f"Failed to perform variable replacement for the following: {misses}")
+    
+    # roll result, return values
+    result = roll(rollString)
+    return key, str(result.total), str(result)

@@ -4,7 +4,7 @@
 
 from discord.ext import commands
 import config.config as config
-from extensions.util import getRoleStrings
+from bot_extensions.util import getRoleStrings
 import re
 logger = config.LOGGER
 

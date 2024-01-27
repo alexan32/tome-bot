@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 import config.config as config
 import re
-from extensions.util import getContextInfo
+from bot_extensions.util import getContextInfo
 
 logger = config.LOGGER
 
