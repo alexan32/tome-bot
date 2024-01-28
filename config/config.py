@@ -12,6 +12,8 @@ ROLES = ['gm', 'player', 'admin']
 DICE_OPERATORS = r"(k|p|rr|ro|ra|e|mi|ma)(l|h)?"
 VARIABLE = r"([a-ce-z][a-z_]*|d[a-z_]+)"
 MAX_DEPTH = 10
+CACHE_SIZE = 100000    # 10 Kb
+UPDATE_FLAG = "UPDATE"
 
 def init(stage):
     global STAGE
@@ -31,7 +33,7 @@ def init(stage):
     formatter = logging.Formatter('[%(asctime)s][%(levelname)s]: %(message)s')
     if STAGE == "prd":
         LOGGER = logging.getLogger('discord')
-        LOGGER.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.WARN)
         handler = logging.handlers.RotatingFileHandler(
             filename='discord.log', 
             encoding='utf-8', 
@@ -42,7 +44,7 @@ def init(stage):
     
     else:
         LOGGER = logging.Logger('discord')
-        LOGGER.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
 

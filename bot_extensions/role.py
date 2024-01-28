@@ -85,5 +85,9 @@ class RoleCog(commands.Cog):
         await ctx.send(f"Gave role '{roleName}' to {targetMember.display_name}")
 
 
+    @commands.command()
+    async def me(self, ctx, *args):
+        await ctx.message.delete()
+
 async def setup(bot):
     await bot.add_cog(RoleCog(bot))

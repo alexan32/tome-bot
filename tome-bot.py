@@ -30,6 +30,7 @@ async def on_ready():
     logger.info("loading bot extensions.")
     await bot.load_extension("bot_extensions.register")
     await bot.load_extension("bot_extensions.role")
+    await bot.load_extension("bot_extensions.command")
     logger.info("======= BOT IS READY! =======")
 
 # LAUNCH BOT

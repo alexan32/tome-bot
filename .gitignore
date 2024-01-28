@@ -1,4 +1,5 @@
 config/*.json
+services/*.json
 __pycache__
 character-min.json
 character2.json
