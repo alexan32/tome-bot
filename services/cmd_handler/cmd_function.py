@@ -21,8 +21,8 @@ def function(tokens: list, characterData: dict):
 def functionCreate(tokens:list, characterData:dict):
     funcName = tokens.pop(0)
 
-    if funcName in characterData["functions"]:
-        raise AlreadyExistsException()
+    # if funcName in characterData["functions"]:
+    #     raise AlreadyExistsException()
     
     args = []
     while tokens[0][0] == "$":

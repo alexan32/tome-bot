@@ -56,7 +56,6 @@ class CacheHandler:
 
         return data
     
-
 characterCache = CacheHandler("character-cache.json", CACHE_SIZE, CACHE_SIZE/4)
 gameCache = CacheHandler("game-cache.json", CACHE_SIZE, CACHE_SIZE/4)
 
